@@ -6,7 +6,7 @@ use std::{
         mpsc::{channel, Receiver, Sender},
         Arc, Mutex,
     },
-    time::{Duration, Instant},
+    time::{Duration},
 };
 
 use anyhow::Result;
@@ -41,7 +41,6 @@ impl Corner {
     pub fn wait(&self) -> Result<()> {
         let timeout = Duration::from_millis(cmp::max(self.config.timeout_ms.into(), 5));
         let mut last_event = None;
-        let mut command_done_at = None;
         loop {
             let event_result = self
                 .channel
@@ -52,18 +51,10 @@ impl Corner {
             match event_result {
                 Ok(event) => {
                     debug!("Received event: {:?}", event);
-                    if command_done_at.map_or(true, |value| {
-                        Instant::now()
-                            .duration_since(value)
-                            .ge(&Duration::from_millis(250))
-                    }) {
-                        last_event = Some(event);
-                    } else {
-                        debug!("Ignored the event due to too fast after unlock.");
-                    }
+                    last_event = Some(event);
                 }
                 Err(_error) => {
-                    if last_event.map_or(Ok(false), |value| -> Result<bool> {
+                    last_event.map_or(Ok(false), |value| -> Result<bool> {
                         if value == CornerEvent::Enter {
                             self.execute_enter_command()?;
                         } else if value == CornerEvent::Leave {
@@ -72,9 +63,7 @@ impl Corner {
                             return Ok(false);
                         }
                         return Ok(true);
-                    })? {
-                        command_done_at = Some(Instant::now());
-                    }
+                    })?;
                     last_event = None;
                 }
             }
