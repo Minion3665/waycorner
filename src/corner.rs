@@ -121,8 +121,7 @@ impl Corner {
                 .map(|(_, value)| value)
                 .collect::<Vec<_>>();
             info!("executing command: {} {:?}", binary, args);
-            let output = Command::new(binary).args(args).output()?;
-            info!("output received: {:?}", output);
+            Command::new(binary).args(args).spawn()?;
         }
 
         Ok(())
@@ -139,8 +138,7 @@ impl Corner {
                 .map(|(_, value)| value)
                 .collect::<Vec<_>>();
             info!("executing command: {} {:?}", binary, args);
-            let output = Command::new(binary).args(args).output()?;
-            info!("output received: {:?}", output);
+            Command::new(binary).args(args).spawn()?;
         }
 
         Ok(())
